@@ -1,4 +1,4 @@
-#include <taihen.h>
+﻿#include <taihen.h>
 #include <vitasdk.h>
 #include <stdio.h>
 #include "blit.h"
@@ -33,25 +33,38 @@ static SceUID g_hooks[1];
 static tai_hook_ref_t ref_hook0;
 int sceDisplaySetFrameBuf0(const SceDisplayFrameBuf *pParam, int sync) {
 	int i, y = 0, x, len;
+	char tmp[255] = {0};
 	char buf[255] = {0};
 
 	blit_set_frame_buf(pParam);
-	blit_set_color(0x00FFFFFF, 0x00FF0000); // ABGR
 
 	for (i = 0; i < 65; i++) {
+		if (y % 2 == 0)
+			blit_set_color(0x00FFFFFF, 0x1F0000FF); // ABGR
+		else
+			blit_set_color(0x00FFFFFF, 0x1FFF0000); // ABGR
+
 		memset(buf, 0, sizeof(buf));
 		sceAppMgrAppParamGetString(0, i, buf, sizeof(buf));
 		len = strlen(buf);
 
 		if (len > 0) {
-			for (x = 1; x < 52; x++)
+			// выводим номер строки и разделитель
+			memset(tmp, 0, sizeof(tmp));
+			sprintf(tmp, "%02i|", i);
+			blit_string(16 * 1, 16 + y * 16, tmp);
+
+			// вписываем основной текст
+			blit_string(16 * 4, 16 + y * 16, buf);
+
+			// дополняем строку точками
+			for (x = 4 + len; x < 50; x++)
 				blit_string(16 * x, 16 + y * 16, ".");
 
-			blit_string(16 * 1, 16 + y * 16, buf);
-
-			memset(buf, 0, sizeof(buf));
-			sprintf(buf, "%08i", len);
-			blit_string(16 * 51, 16 + y * 16, buf);
+			// дописываем разделитель и размер
+			memset(tmp, 0, sizeof(tmp));
+			sprintf(tmp, "|%08i", len);
+			blit_string(16 * 50, 16 + y * 16, tmp);
 
 			y++;
 		}
