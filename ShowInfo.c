@@ -32,26 +32,29 @@ static SceUID g_hooks[1];
 
 static tai_hook_ref_t ref_hook0;
 int sceDisplaySetFrameBuf0(const SceDisplayFrameBuf *pParam, int sync) {
-	int y, x, len;
+	int i, y = 0, x, len;
 	char buf[255] = {0};
 
 	blit_set_frame_buf(pParam);
 	blit_set_color(0x00FFFFFF, 0x00FF0000); // ABGR
 
-	for (y = 0; y < 32; y++) {
+	for (i = 0; i < 65; i++) {
 		memset(buf, 0, sizeof(buf));
-		sceAppMgrAppParamGetString(0, y, buf, sizeof(buf));
-		blit_string(16 * 1, 16 + y * 16, ">");
-		//
-		for (x = 2; x < 52; x++)
-			blit_string(16 * x, 16 + y * 16, ".");
-		//
-		blit_string(16 * 2, 16 + y * 16, buf);
-		//
+		sceAppMgrAppParamGetString(0, i, buf, sizeof(buf));
 		len = strlen(buf);
-		memset(buf, 0, sizeof(buf));
-		sprintf(buf, "%08i", len);
-		blit_string(16 * 51, 16 + y * 16, buf);
+
+		if (len > 0) {
+			for (x = 1; x < 52; x++)
+				blit_string(16 * x, 16 + y * 16, ".");
+
+			blit_string(16 * 1, 16 + y * 16, buf);
+
+			memset(buf, 0, sizeof(buf));
+			sprintf(buf, "%08i", len);
+			blit_string(16 * 51, 16 + y * 16, buf);
+
+			y++;
+		}
 	}
 
 	return TAI_CONTINUE(int, ref_hook0, pParam, sync);
