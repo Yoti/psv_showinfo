@@ -1,25 +1,58 @@
 #include <taihen.h>
 #include <vitasdk.h>
+#include <stdio.h>
 #include "blit.h"
 
 /*
+	blit_string
+
 	X: 960px/16ppc=60chars
 	Y: 544px/16ppc=34chars
 	*: PPC = Pixels Per Char
 */
+/*
+	sceAppMgrAppParamGetString
 
-static int TITLE_ID_X = 60 * 16 - 9 * 16;
-static int TITLE_ID_Y = 34 * 16 - 1 * 16;
+	_0 ?
+	_1 ?
+	_2 ?
+	_3 ?
+	_4 ?
+	_5 ?
+	_6 CONTENT_ID
+	_7 ?
+	_8 CATEGORY
+	_9 TITLE
+	10 STITLE
+	11 ?
+	12 TITLE_ID
+*/
+
 static SceUID g_hooks[1];
 
 static tai_hook_ref_t ref_hook0;
 int sceDisplaySetFrameBuf0(const SceDisplayFrameBuf *pParam, int sync) {
-	char TITLE_ID_T[10] = {0};
-	sceAppMgrAppParamGetString(0, 12, TITLE_ID_T, 10);
+	int y, x, len;
+	char buf[255] = {0};
 
 	blit_set_frame_buf(pParam);
 	blit_set_color(0x00FFFFFF, 0x00FF0000); // ABGR
-	blit_string(TITLE_ID_X, TITLE_ID_Y, TITLE_ID_T);
+
+	for (y = 0; y < 32; y++) {
+		memset(buf, 0, sizeof(buf));
+		sceAppMgrAppParamGetString(0, y, buf, sizeof(buf));
+		blit_string(16 * 1, 16 + y * 16, ">");
+		//
+		for (x = 2; x < 52; x++)
+			blit_string(16 * x, 16 + y * 16, ".");
+		//
+		blit_string(16 * 2, 16 + y * 16, buf);
+		//
+		len = strlen(buf);
+		memset(buf, 0, sizeof(buf));
+		sprintf(buf, "%08i", len);
+		blit_string(16 * 51, 16 + y * 16, buf);
+	}
 
 	return TAI_CONTINUE(int, ref_hook0, pParam, sync);
 }
