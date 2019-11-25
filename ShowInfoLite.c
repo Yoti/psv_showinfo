@@ -26,10 +26,34 @@ int sceDisplaySetFrameBuf0(const SceDisplayFrameBuf *pParam, int sync) {
 	return TAI_CONTINUE(int, ref_hook0, pParam, sync);
 }
 
+void asciify(char from[], char to[]) {
+	for (int i = 0; i < strlen(from); i++) {
+		if (from[i] <= 0x7F) {
+			if (from[i] == 0x0A) // new line
+				sprintf(to, "%s%c", to, 0x20);
+			else if (from[i] >= 0x20)
+				sprintf(to, "%s%c", to, from[i]);
+		} else if (from[i] <= 0xDF) {
+			if ((from[i] != 0xC2) && (from[i+1] != 0xAE)) // copyright
+				sprintf(to, "%s%c", to, '#');
+			i++;
+		} else if (from[i] <= 0xEF) {
+			if ((from[i] != 0xE2) && (from[i+1] != 0x84) && (from[i+2] != 0xA2)) // trademark
+				sprintf(to, "%s%c", to, '#');
+			i++;
+			i++;
+		} else if (from[i] <= 0xFF) {
+			sprintf(to, "%s%c", to, '#');
+			i++;
+			i++;
+			i++;
+		}
+	}
+}
+
 void _start() __attribute__ ((weak, alias ("module_start")));
 
 int module_start(SceSize argc, const void *args) {
-	int i;
 	g_hooks[0] = taiHookFunctionImport(&ref_hook0,
 		TAI_MAIN_MODULE,
 		TAI_ANY_LIBRARY,
@@ -40,14 +64,14 @@ int module_start(SceSize argc, const void *args) {
 		sceAppMgrAppParamGetString(0, 10, STITLE, sizeof(STITLE));
 		sceAppMgrAppParamGetString(0, 12, TITLE_ID, sizeof(TITLE_ID));
 		sceAppMgrAppParamGetInt(0, 3, &APP_VER);
-		sprintf(SHOW_STR, "[%s] %s (v%i", TITLE_ID, STITLE, APP_VER);
-		for (i = 0; i < strlen(SHOW_STR) - 2; i++)
-			FINAL_STR[i] = SHOW_STR[i];
-		sprintf(FINAL_STR, "%s.%c%c)",
-			FINAL_STR,
-			SHOW_STR[strlen(SHOW_STR) - 2],
-			SHOW_STR[strlen(SHOW_STR) - 1]
-		);
+
+		asciify(STITLE, SHOW_STR);
+		sprintf(FINAL_STR, "[%s] %s (v%i))", TITLE_ID, SHOW_STR, APP_VER);
+
+		// 12)) -> 122) -> 112) -> .12)
+		FINAL_STR[strlen(FINAL_STR)-2] = FINAL_STR[strlen(FINAL_STR)-3];
+		FINAL_STR[strlen(FINAL_STR)-3] = FINAL_STR[strlen(FINAL_STR)-4];
+		FINAL_STR[strlen(FINAL_STR)-4] = '.';
 	}
 
 	return SCE_KERNEL_START_SUCCESS;
